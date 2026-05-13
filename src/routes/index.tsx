@@ -41,8 +41,7 @@ function TrombinoscopePage() {
   const [editing, setEditing] = useState<Person | undefined>(undefined);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewing, setViewing] = useState<Person | null>(null);
-  
-  const syncStatus = useSyncStatus();
+
 
   const refresh = async () => {
     const list = await trombiDB.list();
