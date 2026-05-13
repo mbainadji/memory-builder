@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, Pencil, Trash2, Mail, Phone, Users } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Mail, Phone, Users, MapPin, Briefcase, Loader2, Cloud, CloudOff, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { trombiDB, type Person } from "@/lib/trombiDB";
 import { PersonForm, type PersonFormValues } from "@/components/PersonForm";
+import { useSyncStatus } from "@/hooks/useSyncStatus";
 
 export const Route = createFileRoute("/")({
   component: TrombinoscopePage,
@@ -40,6 +41,8 @@ function TrombinoscopePage() {
   const [editing, setEditing] = useState<Person | undefined>(undefined);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewing, setViewing] = useState<Person | null>(null);
+  
+  const syncStatus = useSyncStatus();
 
   const refresh = async () => {
     const list = await trombiDB.list();
@@ -72,10 +75,10 @@ function TrombinoscopePage() {
     try {
       if (editing) {
         await trombiDB.update(editing.id, values);
-        toast.success("Profil mis à jour");
+        toast.success("Profil mis à jour avec succès");
       } else {
         await trombiDB.create(values);
-        toast.success("Profil ajouté");
+        toast.success("Profil ajouté avec succès");
       }
       setFormOpen(false);
       setEditing(undefined);
@@ -100,112 +103,205 @@ function TrombinoscopePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
       <Toaster richColors position="top-right" />
 
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-8 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <Users className="h-6 w-6" />
+      {/* Header avec gradient */}
+      <header className="relative overflow-hidden border-b border-white/20 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 backdrop-blur-sm">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-white/10 blur-3xl"></div>
+          <div className="absolute -left-40 -bottom-40 h-80 w-80 rounded-full bg-white/10 blur-3xl"></div>
+        </div>
+        <div className="relative mx-auto max-w-7xl px-6 py-12 sm:py-16">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md text-white shadow-lg">
+                <Users className="h-7 w-7" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight text-white">Trombinoscope</h1>
+                <p className="mt-1 text-blue-100">Gestionnaire d'annuaire professionnel</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">Trombinoscope</h1>
-              <p className="text-sm text-muted-foreground">
-                Annuaire dynamique — stocké localement dans votre navigateur
-              </p>
-            </div>
+            <Button 
+              onClick={openCreate} 
+              size="lg"
+              className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all"
+            >
+              <Plus className="mr-2 h-5 w-5" /> Ajouter une personne
+            </Button>
           </div>
-          <Button onClick={openCreate} size="lg">
-            <Plus className="mr-2 h-4 w-4" /> Ajouter une personne
-          </Button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher par nom, rôle, email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
+      <main className="relative mx-auto max-w-7xl px-6 py-12">
+        {/* Status de synchronisation */}
+        {syncStatus.error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2 text-red-700 dark:text-red-300">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <span className="text-sm">Erreur de synchronisation: {syncStatus.error}</span>
           </div>
-          <Badge variant="secondary" className="shrink-0">
-            {filtered.length} {filtered.length > 1 ? "profils" : "profil"}
-          </Badge>
+        )}
+
+        {/* Barre de recherche */}
+        <div className="mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder="Rechercher par nom, rôle, email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-12 h-11 bg-white shadow-sm border-slate-200 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge variant="secondary" className="h-11 px-4 text-sm font-medium bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200">
+                {filtered.length} {filtered.length > 1 ? "profils" : "profil"}
+              </Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={syncStatus.manualSync}
+                disabled={syncStatus.isSyncing}
+                title={syncStatus.isSyncing ? "Synchronisation en cours..." : "Synchroniser maintenant"}
+                className="flex items-center gap-2"
+              >
+                {syncStatus.isSyncing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : syncStatus.lastSync ? (
+                  <Cloud className="h-4 w-4 text-green-600 dark:text-green-400" />
+                ) : (
+                  <CloudOff className="h-4 w-4 text-slate-400" />
+                )}
+                <span className="hidden sm:inline text-xs">
+                  {syncStatus.isSyncing
+                    ? "Sync..."
+                    : syncStatus.lastSync
+                    ? new Date(syncStatus.lastSync).toLocaleTimeString("fr-FR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "Non synchronisé"}
+                </span>
+              </Button>
+            </div>
+          </div>
         </div>
 
+        {/* Contenu principal */}
         {!loaded ? (
-          <p className="py-16 text-center text-muted-foreground">Chargement...</p>
+          <div className="flex items-center justify-center py-24">
+            <div className="text-center">
+              <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center animate-spin">
+                <div className="h-8 w-8 rounded-full border-4 border-blue-200 dark:border-blue-800 border-t-blue-600 dark:border-t-blue-400"></div>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400">Chargement de l'annuaire...</p>
+            </div>
+          </div>
         ) : filtered.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-              <Users className="h-10 w-10 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">
-                {people.length === 0 ? "Aucun profil pour l'instant" : "Aucun résultat"}
-              </h2>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                {people.length === 0
-                  ? "Commencez par ajouter votre premier profil au trombinoscope."
-                  : "Essayez d'ajuster votre recherche."}
-              </p>
-              {people.length === 0 && (
-                <Button onClick={openCreate} className="mt-2">
-                  <Plus className="mr-2 h-4 w-4" /> Ajouter une personne
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+          <div className="py-16">
+            <Card className="border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white/50 backdrop-blur">
+              <CardContent className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+                <div className="rounded-full bg-blue-100 dark:bg-blue-900 p-4">
+                  <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+                  {people.length === 0 ? "Créez votre premier profil" : "Aucun résultat trouvé"}
+                </h2>
+                <p className="max-w-sm text-slate-600 dark:text-slate-400">
+                  {people.length === 0
+                    ? "Commencez à construire votre annuaire professionnel en ajoutant votre premier profil."
+                    : "Ajustez votre recherche pour trouver les profils souhaités."}
+                </p>
+                {people.length === 0 && (
+                  <Button onClick={openCreate} className="mt-4 bg-blue-600 hover:bg-blue-700">
+                    <Plus className="mr-2 h-4 w-4" /> Ajouter une personne
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((p) => {
               const initials = `${p.firstName[0] ?? ""}${p.lastName[0] ?? ""}`.toUpperCase();
+              const colors = ["from-blue-500 to-cyan-500", "from-purple-500 to-pink-500", "from-green-500 to-emerald-500", "from-orange-500 to-red-500"];
+              const colorIndex = p.id.charCodeAt(0) % colors.length;
               return (
                 <Card
                   key={p.id}
-                  className="group cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+                  className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-200 dark:hover:border-blue-800 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
                   onClick={() => setViewing(p)}
                 >
-                  <CardContent className="p-5">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-16 w-16">
+                  {/* Gradient de fond en haut */}
+                  <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${colors[colorIndex]}`}></div>
+                  
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <Avatar className="h-20 w-20 border-4 border-white dark:border-slate-900 shadow-md">
                         {p.photo ? <AvatarImage src={p.photo} alt={`${p.firstName} ${p.lastName}`} /> : null}
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        <AvatarFallback className={`bg-gradient-to-br ${colors[colorIndex]} text-white font-bold text-lg`}>
                           {initials}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate font-semibold text-foreground">
-                          {p.firstName} {p.lastName}
-                        </h3>
-                        <p className="truncate text-sm text-muted-foreground">{p.role}</p>
-                        <p className="mt-1 truncate text-xs text-muted-foreground">{p.email}</p>
+                      <div className="opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEdit(p);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteId(p.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="mt-4 flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEdit(p);
-                        }}
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-3">
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-slate-50 truncate">
+                        {p.firstName} {p.lastName}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Briefcase className="h-4 w-4 text-slate-400 dark:text-slate-600 flex-shrink-0" />
+                        <p className="text-sm text-slate-600 dark:text-slate-400 truncate">{p.role}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <a 
+                        href={`mailto:${p.email}`} 
+                        className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteId(p.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                        <Mail className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate text-xs">{p.email}</span>
+                      </a>
+                      {p.phone && (
+                        <a 
+                          href={`tel:${p.phone}`}
+                          className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Phone className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-xs">{p.phone}</span>
+                        </a>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -217,11 +313,11 @@ function TrombinoscopePage() {
 
       {/* Form dialog */}
       <Dialog open={formOpen} onOpenChange={(o) => { setFormOpen(o); if (!o) setEditing(undefined); }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editing ? "Modifier le profil" : "Nouveau profil"}</DialogTitle>
-            <DialogDescription>
-              Renseignez vos informations. Elles sont sauvegardées dans votre navigateur.
+            <DialogTitle className="text-2xl">{editing ? "Modifier le profil" : "Nouveau profil"}</DialogTitle>
+            <DialogDescription className="text-base">
+              Renseignez vos informations. Elles sont sauvegardées localement dans votre navigateur.
             </DialogDescription>
           </DialogHeader>
           <PersonForm
@@ -239,34 +335,55 @@ function TrombinoscopePage() {
           {viewing && (
             <>
               <DialogHeader>
-                <DialogTitle>{viewing.firstName} {viewing.lastName}</DialogTitle>
-                <DialogDescription>{viewing.role}</DialogDescription>
+                <DialogTitle className="text-2xl">{viewing.firstName} {viewing.lastName}</DialogTitle>
+                <DialogDescription className="text-base flex items-center gap-2 mt-2">
+                  <Briefcase className="h-4 w-4" />
+                  {viewing.role}
+                </DialogDescription>
               </DialogHeader>
-              <div className="flex flex-col items-center gap-4 py-2">
-                <Avatar className="h-28 w-28">
+              <div className="flex flex-col items-center gap-6 py-6">
+                <Avatar className="h-32 w-32 border-4 border-blue-100 dark:border-blue-900 shadow-lg">
                   {viewing.photo ? <AvatarImage src={viewing.photo} alt="" /> : null}
-                  <AvatarFallback className="bg-primary/10 text-primary text-2xl font-semibold">
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-4xl font-bold">
                     {`${viewing.firstName[0] ?? ""}${viewing.lastName[0] ?? ""}`.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="w-full space-y-2 text-sm">
-                  <a href={`mailto:${viewing.email}`} className="flex items-center gap-2 text-foreground hover:text-primary">
-                    <Mail className="h-4 w-4 text-muted-foreground" /> {viewing.email}
+                <div className="w-full space-y-3">
+                  <a 
+                    href={`mailto:${viewing.email}`} 
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                  >
+                    <Mail className="h-5 w-5" /> 
+                    <span className="text-sm break-all">{viewing.email}</span>
                   </a>
                   {viewing.phone && (
-                    <a href={`tel:${viewing.phone}`} className="flex items-center gap-2 text-foreground hover:text-primary">
-                      <Phone className="h-4 w-4 text-muted-foreground" /> {viewing.phone}
+                    <a 
+                      href={`tel:${viewing.phone}`}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+                    >
+                      <Phone className="h-5 w-5" /> 
+                      <span className="text-sm">{viewing.phone}</span>
                     </a>
                   )}
                   {viewing.bio && (
-                    <p className="mt-3 rounded-md bg-muted p-3 text-muted-foreground">{viewing.bio}</p>
+                    <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{viewing.bio}</p>
+                    </div>
                   )}
                 </div>
-                <div className="flex w-full justify-end gap-2 pt-2">
-                  <Button variant="outline" onClick={() => { const p = viewing; setViewing(null); openEdit(p); }}>
+                <div className="flex w-full justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => { const p = viewing; setViewing(null); openEdit(p); }}
+                    className="flex-1 sm:flex-none"
+                  >
                     <Pencil className="mr-2 h-4 w-4" /> Modifier
                   </Button>
-                  <Button variant="destructive" onClick={() => setDeleteId(viewing.id)}>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setDeleteId(viewing.id)}
+                    className="flex-1 sm:flex-none"
+                  >
                     <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                   </Button>
                 </div>
@@ -280,14 +397,14 @@ function TrombinoscopePage() {
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce profil ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est définitive. Le profil sera retiré de votre trombinoscope.
+            <AlertDialogTitle className="text-xl">Supprimer ce profil ?</AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              Cette action est définitive et ne peut pas être annulée. Le profil sera retiré de votre trombinoscope.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Supprimer</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Supprimer</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

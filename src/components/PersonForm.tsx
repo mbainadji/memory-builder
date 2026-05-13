@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Upload } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import type { Person } from "@/lib/trombiDB";
 
 export type PersonFormValues = Omit<Person, "id" | "createdAt" | "updatedAt">;
@@ -87,15 +87,20 @@ export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregis
   };
 
   const initials = `${values.firstName[0] ?? ""}${values.lastName[0] ?? ""}`.toUpperCase();
+  const colors = ["from-blue-500 to-cyan-500", "from-purple-500 to-pink-500", "from-green-500 to-emerald-500"];
+  const colorIndex = (values.firstName + values.lastName).charCodeAt(0) % colors.length;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex items-center gap-4">
-        <Avatar className="h-20 w-20">
-          {values.photo ? <AvatarImage src={values.photo} alt="" /> : null}
-          <AvatarFallback className="bg-primary/10 text-primary">{initials || "?"}</AvatarFallback>
-        </Avatar>
-        <div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Photo section */}
+      <div className="flex justify-center">
+        <div className="relative group">
+          <Avatar className="h-28 w-28 border-4 border-blue-100 dark:border-blue-900 shadow-lg">
+            {values.photo ? <AvatarImage src={values.photo} alt="" /> : null}
+            <AvatarFallback className={`bg-gradient-to-br ${colors[colorIndex]} text-white text-2xl font-bold`}>
+              {initials || "?"}
+            </AvatarFallback>
+          </Avatar>
           <input
             ref={fileRef}
             type="file"
@@ -103,53 +108,151 @@ export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregis
             className="hidden"
             onChange={(e) => e.target.files?.[0] && handlePhoto(e.target.files[0])}
           />
-          <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
-            <Upload className="mr-2 h-4 w-4" /> Choisir une photo
-          </Button>
-          {errors.photo && <p className="mt-1 text-xs text-destructive">{errors.photo}</p>}
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="absolute bottom-0 right-0 p-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-colors"
+          >
+            <Upload className="h-4 w-4" />
+          </button>
+          {values.photo && (
+            <button
+              type="button"
+              onClick={() => set("photo", "")}
+              className="absolute -top-2 -right-2 p-1 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg transition-colors"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      </div>
+      {errors.photo && <p className="text-center text-sm text-red-600 dark:text-red-400">{errors.photo}</p>}
+
+      {/* Nom et Prénom */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="firstName" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            Prénom <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="firstName"
+            value={values.firstName}
+            maxLength={50}
+            placeholder="Jean"
+            onChange={(e) => set("firstName", e.target.value)}
+            className={`h-10 border-slate-200 dark:border-slate-800 ${
+              errors.firstName ? "border-red-500 dark:border-red-500" : ""
+            }`}
+          />
+          {errors.firstName && <p className="text-xs text-red-600 dark:text-red-400">{errors.firstName}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="lastName" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            Nom <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="lastName"
+            value={values.lastName}
+            maxLength={50}
+            placeholder="Dupont"
+            onChange={(e) => set("lastName", e.target.value)}
+            className={`h-10 border-slate-200 dark:border-slate-800 ${
+              errors.lastName ? "border-red-500 dark:border-red-500" : ""
+            }`}
+          />
+          {errors.lastName && <p className="text-xs text-red-600 dark:text-red-400">{errors.lastName}</p>}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label htmlFor="firstName">Prénom</Label>
-          <Input id="firstName" value={values.firstName} maxLength={50} onChange={(e) => set("firstName", e.target.value)} />
-          {errors.firstName && <p className="mt-1 text-xs text-destructive">{errors.firstName}</p>}
+      {/* Fonction / Rôle */}
+      <div className="space-y-2">
+        <Label htmlFor="role" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+          Fonction / Rôle <span className="text-red-500">*</span>
+        </Label>
+        <Input
+          id="role"
+          value={values.role}
+          maxLength={80}
+          placeholder="Directeur Général"
+          onChange={(e) => set("role", e.target.value)}
+          className={`h-10 border-slate-200 dark:border-slate-800 ${
+            errors.role ? "border-red-500 dark:border-red-500" : ""
+          }`}
+        />
+        {errors.role && <p className="text-xs text-red-600 dark:text-red-400">{errors.role}</p>}
+      </div>
+
+      {/* Email et Téléphone */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            Email <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            value={values.email}
+            maxLength={255}
+            placeholder="jean@example.com"
+            onChange={(e) => set("email", e.target.value)}
+            className={`h-10 border-slate-200 dark:border-slate-800 ${
+              errors.email ? "border-red-500 dark:border-red-500" : ""
+            }`}
+          />
+          {errors.email && <p className="text-xs text-red-600 dark:text-red-400">{errors.email}</p>}
         </div>
-        <div>
-          <Label htmlFor="lastName">Nom</Label>
-          <Input id="lastName" value={values.lastName} maxLength={50} onChange={(e) => set("lastName", e.target.value)} />
-          {errors.lastName && <p className="mt-1 text-xs text-destructive">{errors.lastName}</p>}
+        <div className="space-y-2">
+          <Label htmlFor="phone" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            Téléphone
+          </Label>
+          <Input
+            id="phone"
+            value={values.phone ?? ""}
+            maxLength={30}
+            placeholder="+33 (0)1 23 45 67 89"
+            onChange={(e) => set("phone", e.target.value)}
+            className="h-10 border-slate-200 dark:border-slate-800"
+          />
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="role">Fonction / Rôle</Label>
-        <Input id="role" value={values.role} maxLength={80} onChange={(e) => set("role", e.target.value)} />
-        {errors.role && <p className="mt-1 text-xs text-destructive">{errors.role}</p>}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" value={values.email} maxLength={255} onChange={(e) => set("email", e.target.value)} />
-          {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
+      {/* Bio */}
+      <div className="space-y-2">
+        <Label htmlFor="bio" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+          Bio / Présentation
+        </Label>
+        <Textarea
+          id="bio"
+          rows={4}
+          value={values.bio ?? ""}
+          maxLength={500}
+          placeholder="Écrivez quelques lignes à votre sujet..."
+          onChange={(e) => set("bio", e.target.value)}
+          className="border-slate-200 dark:border-slate-800 resize-none"
+        />
+        <div className="text-xs text-slate-500 dark:text-slate-400 text-right">
+          {values.bio?.length ?? 0}/500 caractères
         </div>
-        <div>
-          <Label htmlFor="phone">Téléphone</Label>
-          <Input id="phone" value={values.phone ?? ""} maxLength={30} onChange={(e) => set("phone", e.target.value)} />
-        </div>
+        {errors.bio && <p className="text-xs text-red-600 dark:text-red-400">{errors.bio}</p>}
       </div>
 
-      <div>
-        <Label htmlFor="bio">Bio</Label>
-        <Textarea id="bio" rows={3} value={values.bio ?? ""} maxLength={500} onChange={(e) => set("bio", e.target.value)} />
-        {errors.bio && <p className="mt-1 text-xs text-destructive">{errors.bio}</p>}
-      </div>
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="ghost" onClick={onCancel}>Annuler</Button>
-        <Button type="submit" disabled={submitting}>{submitLabel}</Button>
+      {/* Boutons d'action */}
+      <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          className="px-6"
+        >
+          Annuler
+        </Button>
+        <Button
+          type="submit"
+          disabled={submitting}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6"
+        >
+          {submitting ? "Traitement..." : submitLabel}
+        </Button>
       </div>
     </form>
   );
