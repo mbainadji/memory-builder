@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { trombiDB, type Person } from "@/lib/trombiDB";
 import { PersonForm, type PersonFormValues } from "@/components/PersonForm";
-import { useSyncStatus } from "@/hooks/useSyncStatus";
+
 
 export const Route = createFileRoute("/")({
   component: TrombinoscopePage,
