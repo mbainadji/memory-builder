@@ -134,14 +134,6 @@ function TrombinoscopePage() {
       </header>
 
       <main className="relative mx-auto max-w-7xl px-6 py-12">
-        {/* Status de synchronisation */}
-        {syncStatus.error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2 text-red-700 dark:text-red-300">
-            <AlertCircle className="h-4 w-4 flex-shrink-0" />
-            <span className="text-sm">Erreur de synchronisation: {syncStatus.error}</span>
-          </div>
-        )}
-
         {/* Barre de recherche */}
         <div className="mb-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -154,37 +146,9 @@ function TrombinoscopePage() {
                 className="pl-12 h-11 bg-white shadow-sm border-slate-200 focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Badge variant="secondary" className="h-11 px-4 text-sm font-medium bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200">
-                {filtered.length} {filtered.length > 1 ? "profils" : "profil"}
-              </Badge>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={syncStatus.manualSync}
-                disabled={syncStatus.isSyncing}
-                title={syncStatus.isSyncing ? "Synchronisation en cours..." : "Synchroniser maintenant"}
-                className="flex items-center gap-2"
-              >
-                {syncStatus.isSyncing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : syncStatus.lastSync ? (
-                  <Cloud className="h-4 w-4 text-green-600 dark:text-green-400" />
-                ) : (
-                  <CloudOff className="h-4 w-4 text-slate-400" />
-                )}
-                <span className="hidden sm:inline text-xs">
-                  {syncStatus.isSyncing
-                    ? "Sync..."
-                    : syncStatus.lastSync
-                    ? new Date(syncStatus.lastSync).toLocaleTimeString("fr-FR", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "Non synchronisé"}
-                </span>
-              </Button>
-            </div>
+            <Badge variant="secondary" className="h-11 px-4 text-sm font-medium bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 shrink-0">
+              {filtered.length} {filtered.length > 1 ? "profils" : "profil"}
+            </Badge>
           </div>
         </div>
 
