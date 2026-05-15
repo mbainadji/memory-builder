@@ -19,7 +19,7 @@ Un service CRUD complet et moderne en **ES6/ES2020+** pour gérer les personnes 
 Le service CRUD est déjà intégré à votre projet. Importez-le simplement:
 
 ```typescript
-import { crudService } from '@/lib/crud';
+import { crudService } from "@/lib/crud";
 ```
 
 ---
@@ -30,13 +30,13 @@ import { crudService } from '@/lib/crud';
 
 ```typescript
 const newPerson = await crudService.create({
-  firstName: 'Jean',
-  lastName: 'Dupont',
-  role: 'Développeur',
-  email: 'jean.dupont@example.com',
-  phone: '+33612345678',
-  bio: 'Expert fullstack',
-  photo: '', // optionnel: data URL
+  firstName: "Jean",
+  lastName: "Dupont",
+  role: "Développeur",
+  email: "jean.dupont@example.com",
+  phone: "+33612345678",
+  bio: "Expert fullstack",
+  photo: "", // optionnel: data URL
 });
 
 console.log(newPerson); // { id: '...', firstName: 'Jean', ..., createdAt: ..., updatedAt: ... }
@@ -46,7 +46,7 @@ console.log(newPerson); // { id: '...', firstName: 'Jean', ..., createdAt: ..., 
 
 ```typescript
 // Par ID
-const person = await crudService.getById('person-id-123');
+const person = await crudService.getById("person-id-123");
 
 // Toutes les personnes
 const allPeople = await crudService.getAll();
@@ -55,9 +55,9 @@ const allPeople = await crudService.getAll();
 ### UPDATE - Mettre à jour une personne
 
 ```typescript
-const updated = await crudService.update('person-id-123', {
-  firstName: 'Jean-Marie',
-  bio: 'Expert fullstack JavaScript',
+const updated = await crudService.update("person-id-123", {
+  firstName: "Jean-Marie",
+  bio: "Expert fullstack JavaScript",
   // Vous n'avez pas besoin de spécifier tous les champs
 });
 ```
@@ -65,10 +65,10 @@ const updated = await crudService.update('person-id-123', {
 ### DELETE - Supprimer une personne
 
 ```typescript
-await crudService.delete('person-id-123');
+await crudService.delete("person-id-123");
 
 // Supprimer plusieurs personnes
-const count = await crudService.deleteMultiple(['id-1', 'id-2', 'id-3']);
+const count = await crudService.deleteMultiple(["id-1", "id-2", "id-3"]);
 console.log(`${count} personne(s) supprimée(s)`);
 ```
 
@@ -82,7 +82,7 @@ Cherche dans `firstName`, `lastName`, et `email`:
 
 ```typescript
 const results = await crudService.search({
-  search: 'Jean',
+  search: "Jean",
 });
 ```
 
@@ -90,7 +90,7 @@ const results = await crudService.search({
 
 ```typescript
 const developers = await crudService.search({
-  role: 'Développeur',
+  role: "Développeur",
 });
 ```
 
@@ -98,8 +98,8 @@ const developers = await crudService.search({
 
 ```typescript
 const results = await crudService.search({
-  search: 'Marie',
-  role: 'Designer',
+  search: "Marie",
+  role: "Designer",
 });
 ```
 
@@ -112,7 +112,7 @@ Récupérez les données par pages:
 ```typescript
 const result = await crudService.getPaginated(
   { page: 1, limit: 10 }, // Options de pagination
-  { search: '', role: '' } // Options de filtrage (optionnel)
+  { search: "", role: "" }, // Options de filtrage (optionnel)
 );
 
 console.log(result);
@@ -128,10 +128,7 @@ console.log(result);
 ### Pagination avec filtre
 
 ```typescript
-const designersPage2 = await crudService.getPaginated(
-  { page: 2, limit: 5 },
-  { role: 'Designer' }
-);
+const designersPage2 = await crudService.getPaginated({ page: 2, limit: 5 }, { role: "Designer" });
 ```
 
 ---
@@ -142,18 +139,18 @@ const designersPage2 = await crudService.getPaginated(
 
 ```typescript
 // Crée une nouvelle personne ou la met à jour si elle existe
-const result = await crudService.upsert('person-id-or-undefined', {
-  firstName: 'Marie',
-  lastName: 'Dupont',
-  role: 'Designer',
-  email: 'marie.dupont@example.com',
+const result = await crudService.upsert("person-id-or-undefined", {
+  firstName: "Marie",
+  lastName: "Dupont",
+  role: "Designer",
+  email: "marie.dupont@example.com",
 });
 ```
 
 ### DUPLICATE - Dupliquer une personne
 
 ```typescript
-const duplicate = await crudService.duplicate('person-id-123');
+const duplicate = await crudService.duplicate("person-id-123");
 // Crée une nouvelle personne avec les mêmes données (mais nouvel ID)
 ```
 
@@ -184,11 +181,11 @@ console.log(stats);
 const jsonData = await crudService.exportJSON();
 
 // Télécharger le fichier
-const blob = new Blob([jsonData], { type: 'application/json' });
+const blob = new Blob([jsonData], { type: "application/json" });
 const url = URL.createObjectURL(blob);
-const a = document.createElement('a');
+const a = document.createElement("a");
 a.href = url;
-a.download = 'people.json';
+a.download = "people.json";
 a.click();
 ```
 
@@ -297,15 +294,15 @@ export function TrombinoscopePage() {
 ```typescript
 // 1. Créer une personne
 const person = await crudService.create({
-  firstName: 'Paul',
-  lastName: 'Bernard',
-  role: 'Manager',
-  email: 'paul@example.com',
+  firstName: "Paul",
+  lastName: "Bernard",
+  role: "Manager",
+  email: "paul@example.com",
 });
 
 // 2. Mettre à jour
 const updated = await crudService.update(person.id, {
-  bio: 'Expérience en management agile',
+  bio: "Expérience en management agile",
 });
 
 // 3. Récupérer
@@ -320,9 +317,9 @@ await crudService.delete(person.id);
 ```typescript
 // Créer plusieurs personnes
 const people = [
-  { firstName: 'Alice', lastName: 'A', role: 'Dev', email: 'alice@x.com' },
-  { firstName: 'Bob', lastName: 'B', role: 'Dev', email: 'bob@x.com' },
-  { firstName: 'Charlie', lastName: 'C', role: 'Design', email: 'charlie@x.com' },
+  { firstName: "Alice", lastName: "A", role: "Dev", email: "alice@x.com" },
+  { firstName: "Bob", lastName: "B", role: "Dev", email: "bob@x.com" },
+  { firstName: "Charlie", lastName: "C", role: "Design", email: "charlie@x.com" },
 ];
 
 for (const person of people) {
@@ -330,7 +327,7 @@ for (const person of people) {
 }
 
 // Supprimer plusieurs
-const ids = ['id-1', 'id-2', 'id-3'];
+const ids = ["id-1", "id-2", "id-3"];
 const deletedCount = await crudService.deleteMultiple(ids);
 ```
 
@@ -341,13 +338,13 @@ const deletedCount = await crudService.deleteMultiple(ids);
 ```typescript
 try {
   const person = await crudService.create({
-    firstName: '', // ❌ Requis
-    lastName: 'Dupont',
-    role: 'Dev',
-    email: 'invalid-email', // ❌ Email invalide
+    firstName: "", // ❌ Requis
+    lastName: "Dupont",
+    role: "Dev",
+    email: "invalid-email", // ❌ Email invalide
   });
 } catch (error) {
-  console.error('Erreur de validation:', error.message);
+  console.error("Erreur de validation:", error.message);
   // "firstName is required"
   // "Invalid email format"
 }
@@ -357,21 +354,21 @@ try {
 
 ## 🎓 Méthodes disponibles
 
-| Méthode | Description | Paramètres | Retour |
-|---------|-------------|-----------|--------|
-| `create()` | Crée une personne | `PersonFormValues` | `Person` |
-| `getById()` | Récupère une personne | `id: string` | `Person \| undefined` |
-| `getAll()` | Liste toutes les personnes | - | `Person[]` |
-| `search()` | Recherche et filtre | `FilterOptions` | `Person[]` |
-| `getPaginated()` | Récupère les données paginées | `PaginationOptions`, `FilterOptions` | `PaginatedResult<Person>` |
-| `update()` | Met à jour une personne | `id: string`, `data: Partial<PersonFormValues>` | `Person` |
-| `delete()` | Supprime une personne | `id: string` | `void` |
-| `deleteMultiple()` | Supprime plusieurs personnes | `ids: string[]` | `number` |
-| `upsert()` | Crée ou met à jour | `id: string \| undefined`, `data: PersonFormValues` | `Person` |
-| `duplicate()` | Duplique une personne | `id: string` | `Person` |
-| `getStats()` | Obtient les statistiques | - | `{ total, byRole, recentlyUpdated }` |
-| `exportJSON()` | Exporte en JSON | - | `string` |
-| `importJSON()` | Importe depuis JSON | `jsonString: string` | `number` |
+| Méthode            | Description                   | Paramètres                                          | Retour                               |
+| ------------------ | ----------------------------- | --------------------------------------------------- | ------------------------------------ |
+| `create()`         | Crée une personne             | `PersonFormValues`                                  | `Person`                             |
+| `getById()`        | Récupère une personne         | `id: string`                                        | `Person \| undefined`                |
+| `getAll()`         | Liste toutes les personnes    | -                                                   | `Person[]`                           |
+| `search()`         | Recherche et filtre           | `FilterOptions`                                     | `Person[]`                           |
+| `getPaginated()`   | Récupère les données paginées | `PaginationOptions`, `FilterOptions`                | `PaginatedResult<Person>`            |
+| `update()`         | Met à jour une personne       | `id: string`, `data: Partial<PersonFormValues>`     | `Person`                             |
+| `delete()`         | Supprime une personne         | `id: string`                                        | `void`                               |
+| `deleteMultiple()` | Supprime plusieurs personnes  | `ids: string[]`                                     | `number`                             |
+| `upsert()`         | Crée ou met à jour            | `id: string \| undefined`, `data: PersonFormValues` | `Person`                             |
+| `duplicate()`      | Duplique une personne         | `id: string`                                        | `Person`                             |
+| `getStats()`       | Obtient les statistiques      | -                                                   | `{ total, byRole, recentlyUpdated }` |
+| `exportJSON()`     | Exporte en JSON               | -                                                   | `string`                             |
+| `importJSON()`     | Importe depuis JSON           | `jsonString: string`                                | `number`                             |
 
 ---
 

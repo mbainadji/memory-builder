@@ -6,19 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
-import { processImageFile, getImageInfo } from "@/lib/image-utils";
-import type { Person } from "@/lib/trombiDB";
+import { processImageFile, getImageInfo } from "@/lib/image-utils.js";
 
-export type PersonFormValues = Omit<Person, "id" | "createdAt" | "updatedAt">;
-
-interface Props {
-  initial?: Person;
-  onSubmit: (values: PersonFormValues) => Promise<void> | void;
-  onCancel: () => void;
-  submitLabel?: string;
-}
-
-const empty: PersonFormValues = {
+const empty = {
   firstName: "",
   lastName: "",
   role: "",
@@ -28,11 +18,11 @@ const empty: PersonFormValues = {
   photo: "",
 };
 
-export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregistrer" }: Props) {
-  const [values, setValues] = useState<PersonFormValues>(empty);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregistrer" }) {
+  const [values, setValues] = useState(empty);
+  const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef(null);
 
   useEffect(() => {
     if (initial) {
@@ -43,10 +33,9 @@ export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregis
     }
   }, [initial]);
 
-  const set = <K extends keyof PersonFormValues>(k: K, v: PersonFormValues[K]) =>
-    setValues((p) => ({ ...p, [k]: v }));
+  const set = (k, v) => setValues((p) => ({ ...p, [k]: v }));
 
-  const handlePhoto = async (file: File) => {
+  const handlePhoto = async (file) => {
     setErrors((e) => ({ ...e, photo: "" }));
     try {
       const compressed = await processImageFile(file);
@@ -54,15 +43,14 @@ export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregis
       set("photo", compressed);
       toast.success(`Image compressée (${info.sizeDisplay})`);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Erreur lors du traitement de l'image";
+      const message = error instanceof Error ? error.message : "Erreur lors du traitement de l'image";
       setErrors((e) => ({ ...e, photo: message }));
       toast.error(message);
     }
   };
 
   const validate = () => {
-    const e: Record<string, string> = {};
+    const e = {};
     if (!values.firstName.trim()) e.firstName = "Requis";
     if (values.firstName.length > 50) e.firstName = "Max 50 caractères";
     if (!values.lastName.trim()) e.lastName = "Requis";
@@ -76,7 +64,7 @@ export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregis
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (ev: React.FormEvent) => {
+  const handleSubmit = async (ev) => {
     ev.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
@@ -108,9 +96,7 @@ export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregis
         <div className="relative group">
           <Avatar className="h-28 w-28 border-4 border-blue-100 dark:border-blue-900 shadow-lg">
             {values.photo ? <AvatarImage src={values.photo} alt="" /> : null}
-            <AvatarFallback
-              className={`bg-gradient-to-br ${colors[colorIndex]} text-white text-2xl font-bold`}
-            >
+            <AvatarFallback className={`bg-gradient-to-br ${colors[colorIndex]} text-white text-2xl font-bold`}>
               {initials || "?"}
             </AvatarFallback>
           </Avatar>
@@ -146,10 +132,7 @@ export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregis
       {/* Nom et Prénom */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label
-            htmlFor="firstName"
-            className="text-sm font-semibold text-slate-700 dark:text-slate-300"
-          >
+          <Label htmlFor="firstName" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
             Prénom <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -167,10 +150,7 @@ export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregis
           )}
         </div>
         <div className="space-y-2">
-          <Label
-            htmlFor="lastName"
-            className="text-sm font-semibold text-slate-700 dark:text-slate-300"
-          >
+          <Label htmlFor="lastName" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
             Nom <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -210,10 +190,7 @@ export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregis
       {/* Email et Téléphone */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label
-            htmlFor="email"
-            className="text-sm font-semibold text-slate-700 dark:text-slate-300"
-          >
+          <Label htmlFor="email" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
             Email <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -230,10 +207,7 @@ export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregis
           {errors.email && <p className="text-xs text-red-600 dark:text-red-400">{errors.email}</p>}
         </div>
         <div className="space-y-2">
-          <Label
-            htmlFor="phone"
-            className="text-sm font-semibold text-slate-700 dark:text-slate-300"
-          >
+          <Label htmlFor="phone" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
             Téléphone
           </Label>
           <Input
@@ -272,12 +246,8 @@ export function PersonForm({ initial, onSubmit, onCancel, submitLabel = "Enregis
         <Button type="button" variant="outline" onClick={onCancel} className="px-6">
           Annuler
         </Button>
-        <Button
-          type="submit"
-          disabled={submitting}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6"
-        >
-          {submitting ? "Traitement..." : submitLabel}
+        <Button type="submit" disabled={submitting} className="px-6">
+          {submitting ? "Enregistrement..." : submitLabel}
         </Button>
       </div>
     </form>

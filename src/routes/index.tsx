@@ -1,6 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, Pencil, Trash2, Mail, Phone, Users, Briefcase } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  Mail,
+  Phone,
+  Users,
+  Briefcase,
+  Download,
+  BarChart3,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -25,32 +36,34 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { trombiDB, type Person } from "@/lib/trombiDB";
+import type { Person } from "@/lib/trombiDB";
 import { PersonForm, type PersonFormValues } from "@/components/PersonForm";
-
+import {
+  usePeople,
+  useCreatePerson,
+  useUpdatePerson,
+  useDeletePerson,
+  usePeopleStats,
+  useExportPeople,
+} from "@/lib/crud-hooks";
 
 export const Route = createFileRoute("/")({
   component: TrombinoscopePage,
 });
 
 function TrombinoscopePage() {
-  const [people, setPeople] = useState<Person[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { data: people = [], isLoading: loading } = usePeople();
+  const { data: stats } = usePeopleStats();
+  const createMutation = useCreatePerson();
+  const updateMutation = useUpdatePerson();
+  const deleteMutation = useDeletePerson();
+  const exportMutation = useExportPeople();
+
   const [search, setSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Person | undefined>(undefined);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewing, setViewing] = useState<Person | null>(null);
-
-
-  const refresh = async () => {
-    const list = await trombiDB.list();
-    setPeople(list.sort((a, b) => a.lastName.localeCompare(b.lastName)));
-  };
-
-  useEffect(() => {
-    refresh().finally(() => setLoaded(true));
-  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -73,17 +86,17 @@ function TrombinoscopePage() {
   const handleSubmit = async (values: PersonFormValues) => {
     try {
       if (editing) {
-        await trombiDB.update(editing.id, values);
+        await updateMutation.mutateAsync({ id: editing.id, data: values });
         toast.success("Profil mis à jour avec succès");
       } else {
-        await trombiDB.create(values);
+        await createMutation.mutateAsync(values);
         toast.success("Profil ajouté avec succès");
       }
       setFormOpen(false);
       setEditing(undefined);
-      await refresh();
     } catch (e) {
-      toast.error("Erreur lors de l'enregistrement");
+      const message = e instanceof Error ? e.message : "Erreur lors de l'enregistrement";
+      toast.error(message);
       console.error(e);
     }
   };
@@ -91,11 +104,10 @@ function TrombinoscopePage() {
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      await trombiDB.remove(deleteId);
+      await deleteMutation.mutateAsync(deleteId);
       toast.success("Profil supprimé");
       setDeleteId(null);
       if (viewing?.id === deleteId) setViewing(null);
-      await refresh();
     } catch {
       toast.error("Suppression impossible");
     }
@@ -122,20 +134,30 @@ function TrombinoscopePage() {
                 <p className="mt-1 text-blue-100">Gestionnaire d'annuaire professionnel</p>
               </div>
             </div>
-            <Button 
-              onClick={openCreate} 
-              size="lg"
-              className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all"
-            >
-              <Plus className="mr-2 h-5 w-5" /> Ajouter une personne
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => exportMutation.mutate()}
+                disabled={exportMutation.isPending || people.length === 0}
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
+              >
+                <Download className="mr-2 h-4 w-4" /> Export JSON
+              </Button>
+              <Button
+                onClick={openCreate}
+                size="lg"
+                className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all"
+              >
+                <Plus className="mr-2 h-5 w-5" /> Ajouter une personne
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="relative mx-auto max-w-7xl px-6 py-12">
-        {/* Barre de recherche */}
-        <div className="mb-8">
+        {/* Barre de recherche et Stats */}
+        <div className="mb-8 space-y-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
@@ -143,17 +165,30 @@ function TrombinoscopePage() {
                 placeholder="Rechercher par nom, rôle, email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-12 h-11 bg-white shadow-sm border-slate-200 focus:ring-2 focus:ring-blue-500"
+                className="pl-12 h-11 bg-white shadow-sm border-slate-200 focus:ring-2 focus:ring-blue-500 dark:bg-slate-900 dark:border-slate-800"
               />
             </div>
-            <Badge variant="secondary" className="h-11 px-4 text-sm font-medium bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 shrink-0">
-              {filtered.length} {filtered.length > 1 ? "profils" : "profil"}
-            </Badge>
+            <div className="flex items-center gap-2">
+              {stats && stats.total > 0 && (
+                <div className="hidden md:flex items-center gap-3 mr-2 px-4 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                    <BarChart3 className="h-3.5 w-3.5" />
+                    <span>Rôles: {Object.keys(stats.byRole).length}</span>
+                  </div>
+                </div>
+              )}
+              <Badge
+                variant="secondary"
+                className="h-11 px-4 text-sm font-medium bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 shrink-0"
+              >
+                {filtered.length} {filtered.length > 1 ? "profils" : "profil"}
+              </Badge>
+            </div>
           </div>
         </div>
 
         {/* Contenu principal */}
-        {!loaded ? (
+        {loading ? (
           <div className="flex items-center justify-center py-24">
             <div className="text-center">
               <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center animate-spin">
@@ -189,7 +224,12 @@ function TrombinoscopePage() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((p) => {
               const initials = `${p.firstName[0] ?? ""}${p.lastName[0] ?? ""}`.toUpperCase();
-              const colors = ["from-blue-500 to-cyan-500", "from-purple-500 to-pink-500", "from-green-500 to-emerald-500", "from-orange-500 to-red-500"];
+              const colors = [
+                "from-blue-500 to-cyan-500",
+                "from-purple-500 to-pink-500",
+                "from-green-500 to-emerald-500",
+                "from-orange-500 to-red-500",
+              ];
               const colorIndex = p.id.charCodeAt(0) % colors.length;
               return (
                 <Card
@@ -198,13 +238,19 @@ function TrombinoscopePage() {
                   onClick={() => setViewing(p)}
                 >
                   {/* Gradient de fond en haut */}
-                  <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${colors[colorIndex]}`}></div>
-                  
+                  <div
+                    className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${colors[colorIndex]}`}
+                  ></div>
+
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-3">
                       <Avatar className="h-20 w-20 border-4 border-white dark:border-slate-900 shadow-md">
-                        {p.photo ? <AvatarImage src={p.photo} alt={`${p.firstName} ${p.lastName}`} /> : null}
-                        <AvatarFallback className={`bg-gradient-to-br ${colors[colorIndex]} text-white font-bold text-lg`}>
+                        {p.photo ? (
+                          <AvatarImage src={p.photo} alt={`${p.firstName} ${p.lastName}`} />
+                        ) : null}
+                        <AvatarFallback
+                          className={`bg-gradient-to-br ${colors[colorIndex]} text-white font-bold text-lg`}
+                        >
                           {initials}
                         </AvatarFallback>
                       </Avatar>
@@ -234,7 +280,7 @@ function TrombinoscopePage() {
                       </div>
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="space-y-3">
                     <div>
                       <h3 className="font-bold text-slate-900 dark:text-slate-50 truncate">
@@ -242,13 +288,15 @@ function TrombinoscopePage() {
                       </h3>
                       <div className="flex items-center gap-2 mt-1">
                         <Briefcase className="h-4 w-4 text-slate-400 dark:text-slate-600 flex-shrink-0" />
-                        <p className="text-sm text-slate-600 dark:text-slate-400 truncate">{p.role}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
+                          {p.role}
+                        </p>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <a 
-                        href={`mailto:${p.email}`} 
+                      <a
+                        href={`mailto:${p.email}`}
                         className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate"
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -256,7 +304,7 @@ function TrombinoscopePage() {
                         <span className="truncate text-xs">{p.email}</span>
                       </a>
                       {p.phone && (
-                        <a 
+                        <a
                           href={`tel:${p.phone}`}
                           className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                           onClick={(e) => e.stopPropagation()}
@@ -275,10 +323,18 @@ function TrombinoscopePage() {
       </main>
 
       {/* Form dialog */}
-      <Dialog open={formOpen} onOpenChange={(o) => { setFormOpen(o); if (!o) setEditing(undefined); }}>
+      <Dialog
+        open={formOpen}
+        onOpenChange={(o) => {
+          setFormOpen(o);
+          if (!o) setEditing(undefined);
+        }}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl">{editing ? "Modifier le profil" : "Nouveau profil"}</DialogTitle>
+            <DialogTitle className="text-2xl">
+              {editing ? "Modifier le profil" : "Nouveau profil"}
+            </DialogTitle>
             <DialogDescription className="text-base">
               Renseignez vos informations. Elles sont sauvegardées localement dans votre navigateur.
             </DialogDescription>
@@ -286,7 +342,10 @@ function TrombinoscopePage() {
           <PersonForm
             initial={editing}
             onSubmit={handleSubmit}
-            onCancel={() => { setFormOpen(false); setEditing(undefined); }}
+            onCancel={() => {
+              setFormOpen(false);
+              setEditing(undefined);
+            }}
             submitLabel={editing ? "Mettre à jour" : "Créer"}
           />
         </DialogContent>
@@ -298,7 +357,9 @@ function TrombinoscopePage() {
           {viewing && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-2xl">{viewing.firstName} {viewing.lastName}</DialogTitle>
+                <DialogTitle className="text-2xl">
+                  {viewing.firstName} {viewing.lastName}
+                </DialogTitle>
                 <DialogDescription className="text-base flex items-center gap-2 mt-2">
                   <Briefcase className="h-4 w-4" />
                   {viewing.role}
@@ -312,38 +373,44 @@ function TrombinoscopePage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="w-full space-y-3">
-                  <a 
-                    href={`mailto:${viewing.email}`} 
+                  <a
+                    href={`mailto:${viewing.email}`}
                     className="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                   >
-                    <Mail className="h-5 w-5" /> 
+                    <Mail className="h-5 w-5" />
                     <span className="text-sm break-all">{viewing.email}</span>
                   </a>
                   {viewing.phone && (
-                    <a 
+                    <a
                       href={`tel:${viewing.phone}`}
                       className="flex items-center gap-3 px-4 py-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
                     >
-                      <Phone className="h-5 w-5" /> 
+                      <Phone className="h-5 w-5" />
                       <span className="text-sm">{viewing.phone}</span>
                     </a>
                   )}
                   {viewing.bio && (
                     <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{viewing.bio}</p>
+                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                        {viewing.bio}
+                      </p>
                     </div>
                   )}
                 </div>
                 <div className="flex w-full justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => { const p = viewing; setViewing(null); openEdit(p); }}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const p = viewing;
+                      setViewing(null);
+                      openEdit(p);
+                    }}
                     className="flex-1 sm:flex-none"
                   >
                     <Pencil className="mr-2 h-4 w-4" /> Modifier
                   </Button>
-                  <Button 
-                    variant="destructive" 
+                  <Button
+                    variant="destructive"
                     onClick={() => setDeleteId(viewing.id)}
                     className="flex-1 sm:flex-none"
                   >
@@ -362,12 +429,15 @@ function TrombinoscopePage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl">Supprimer ce profil ?</AlertDialogTitle>
             <AlertDialogDescription className="text-base">
-              Cette action est définitive et ne peut pas être annulée. Le profil sera retiré de votre trombinoscope.
+              Cette action est définitive et ne peut pas être annulée. Le profil sera retiré de
+              votre trombinoscope.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Supprimer</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Supprimer
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,32 +1,4 @@
-import { trombiDB, type Person } from "./trombiDB";
-import type { PersonFormValues } from "@/components/PersonForm";
-
-/**
- * Interface pour la pagination
- */
-export interface PaginationOptions {
-  page: number;
-  limit: number;
-}
-
-/**
- * Interface pour les résultats paginés
- */
-export interface PaginatedResult<T> {
-  items: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-/**
- * Interface pour les options de filtrage
- */
-export interface FilterOptions {
-  role?: string;
-  search?: string; // Cherche dans firstName, lastName, email
-}
+import { trombiDB } from "./trombiDB";
 
 /**
  * Service CRUD ES6 pour les personnes
@@ -35,10 +7,10 @@ export interface FilterOptions {
 class CRUDService {
   /**
    * CREATE - Crée une nouvelle personne
-   * @param data Les données de la personne (sans id ni timestamps)
-   * @returns La personne créée avec ses métadonnées
+   * @param {Object} data Les données de la personne (sans id ni timestamps)
+   * @returns {Promise<Object>} La personne créée avec ses métadonnées
    */
-  async create(data: PersonFormValues): Promise<Person> {
+  async create(data) {
     // Validation basique
     if (!data.firstName?.trim()) throw new Error("firstName is required");
     if (!data.lastName?.trim()) throw new Error("lastName is required");
@@ -62,34 +34,34 @@ class CRUDService {
 
   /**
    * READ - Récupère une personne par ID
-   * @param id L'ID de la personne
-   * @returns La personne ou undefined
+   * @param {string} id L'ID de la personne
+   * @returns {Promise<Object|undefined>} La personne ou undefined
    */
-  async getById(id: string): Promise<Person | undefined> {
+  async getById(id) {
     if (!id?.trim()) throw new Error("id is required");
     return await trombiDB.get(id);
   }
 
   /**
    * READ - Liste toutes les personnes
-   * @returns Tableau de toutes les personnes
+   * @returns {Promise<Array>} Tableau de toutes les personnes
    */
-  async getAll(): Promise<Person[]> {
+  async getAll() {
     return await trombiDB.list();
   }
 
   /**
    * READ - Recherche et filtre les personnes
-   * @param options Les options de filtrage
-   * @returns Tableau de personnes filtrées
+   * @param {Object} options Les options de filtrage
+   * @returns {Promise<Array>} Tableau de personnes filtrées
    */
-  async search(options: FilterOptions = {}): Promise<Person[]> {
+  async search(options = {}) {
     const people = await this.getAll();
     let filtered = people;
 
     // Filtrer par rôle si fourni
     if (options.role) {
-      filtered = filtered.filter((p) => p.role.toLowerCase() === options.role!.toLowerCase());
+      filtered = filtered.filter((p) => p.role.toLowerCase() === options.role.toLowerCase());
     }
 
     // Filtrer par recherche textuelle si fournie
@@ -99,7 +71,7 @@ class CRUDService {
         (p) =>
           p.firstName.toLowerCase().includes(query) ||
           p.lastName.toLowerCase().includes(query) ||
-          p.email.toLowerCase().includes(query),
+          p.email.toLowerCase().includes(query)
       );
     }
 
@@ -108,14 +80,14 @@ class CRUDService {
 
   /**
    * READ - Récupère les personnes paginées
-   * @param pagination Options de pagination
-   * @param filters Options de filtrage
-   * @returns Résultat paginé
+   * @param {Object} pagination Options de pagination
+   * @param {Object} filters Options de filtrage
+   * @returns {Promise<Object>} Résultat paginé
    */
   async getPaginated(
-    pagination: PaginationOptions = { page: 1, limit: 10 },
-    filters?: FilterOptions,
-  ): Promise<PaginatedResult<Person>> {
+    pagination = { page: 1, limit: 10 },
+    filters = {}
+  ) {
     const filtered = await this.search(filters);
     const total = filtered.length;
     const totalPages = Math.ceil(total / pagination.limit);
@@ -133,11 +105,11 @@ class CRUDService {
 
   /**
    * UPDATE - Met à jour une personne existante
-   * @param id L'ID de la personne
-   * @param data Les données à mettre à jour (partielle)
-   * @returns La personne mise à jour
+   * @param {string} id L'ID de la personne
+   * @param {Object} data Les données à mettre à jour (partielle)
+   * @returns {Promise<Object>} La personne mise à jour
    */
-  async update(id: string, data: Partial<PersonFormValues>): Promise<Person> {
+  async update(id, data) {
     if (!id?.trim()) throw new Error("id is required");
 
     // Vérifier que la personne existe
@@ -161,9 +133,10 @@ class CRUDService {
 
   /**
    * DELETE - Supprime une personne
-   * @param id L'ID de la personne
+   * @param {string} id L'ID de la personne
+   * @returns {Promise<void>}
    */
-  async delete(id: string): Promise<void> {
+  async delete(id) {
     if (!id?.trim()) throw new Error("id is required");
 
     const existing = await this.getById(id);
@@ -174,10 +147,10 @@ class CRUDService {
 
   /**
    * DELETE - Supprime plusieurs personnes par IDs
-   * @param ids Les IDs des personnes à supprimer
-   * @returns Le nombre de personnes supprimées
+   * @param {Array<string>} ids Les IDs des personnes à supprimer
+   * @returns {Promise<number>} Le nombre de personnes supprimées
    */
-  async deleteMultiple(ids: string[]): Promise<number> {
+  async deleteMultiple(ids) {
     if (!Array.isArray(ids) || ids.length === 0) {
       throw new Error("ids must be a non-empty array");
     }
@@ -196,28 +169,26 @@ class CRUDService {
 
   /**
    * Crée ou met à jour une personne (upsert)
-   * @param id L'ID de la personne (optionnel)
-   * @param data Les données
-   * @returns La personne créée ou mise à jour
+   * @param {string|undefined} id L'ID de la personne (optionnel)
+   * @param {Object} data Les données
+   * @returns {Promise<Object>} La personne créée ou mise à jour
    */
-  async upsert(id: string | undefined, data: PersonFormValues): Promise<Person> {
+  async upsert(id, data) {
     if (id) {
-      // Vérifier si la personne existe
       const existing = await this.getById(id);
       if (existing) {
         return await this.update(id, data);
       }
     }
-    // Créer une nouvelle personne
     return await this.create(data);
   }
 
   /**
    * Duplique une personne existante
-   * @param id L'ID de la personne à dupliquer
-   * @returns La personne dupliquée (nouvelle)
+   * @param {string} id L'ID de la personne à dupliquer
+   * @returns {Promise<Object>} La personne dupliquée (nouvelle)
    */
-  async duplicate(id: string): Promise<Person> {
+  async duplicate(id) {
     const existing = await this.getById(id);
     if (!existing) throw new Error(`Person with id ${id} not found`);
 
@@ -227,15 +198,11 @@ class CRUDService {
 
   /**
    * Obtient les statistiques sur les personnes
-   * @returns Objet avec statistiques
+   * @returns {Promise<Object>} Objet avec statistiques
    */
-  async getStats(): Promise<{
-    total: number;
-    byRole: Record<string, number>;
-    recentlyUpdated: Person[];
-  }> {
+  async getStats() {
     const people = await this.getAll();
-    const byRole: Record<string, number> = {};
+    const byRole = {};
 
     for (const person of people) {
       byRole[person.role] = (byRole[person.role] || 0) + 1;
@@ -252,36 +219,35 @@ class CRUDService {
 
   /**
    * Valide le format d'une adresse email
-   * @param email L'email à valider
-   * @returns true si valide, false sinon
+   * @param {string} email L'email à valider
+   * @returns {boolean} true si valide, false sinon
    */
-  private isValidEmail(email: string): boolean {
+  isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   }
 
   /**
    * Exporte les données au format JSON
-   * @returns String JSON contenant toutes les personnes
+   * @returns {Promise<string>} String JSON contenant toutes les personnes
    */
-  async exportJSON(): Promise<string> {
+  async exportJSON() {
     const people = await this.getAll();
     return JSON.stringify(people, null, 2);
   }
 
   /**
    * Importe des personnes depuis du JSON
-   * @param jsonString String JSON contenant les personnes
-   * @returns Nombre de personnes importées
+   * @param {string} jsonString String JSON contenant les personnes
+   * @returns {Promise<number>} Nombre de personnes importées
    */
-  async importJSON(jsonString: string): Promise<number> {
+  async importJSON(jsonString) {
     const data = JSON.parse(jsonString);
     if (!Array.isArray(data)) throw new Error("JSON must be an array of persons");
 
     let count = 0;
     for (const item of data) {
       try {
-        // Valider que l'item contient les champs requis
         if (item.firstName && item.lastName && item.role && item.email) {
           await this.create({
             firstName: item.firstName,

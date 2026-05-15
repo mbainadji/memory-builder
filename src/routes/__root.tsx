@@ -73,10 +73,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Trombinoscope — Annuaire Professionnel" },
-      { name: "description", content: "Trombinoscope - Gérez facilement votre annuaire professionnel avec une base de données locale sécurisée" },
+      {
+        name: "description",
+        content:
+          "Trombinoscope - Gérez facilement votre annuaire professionnel avec une base de données locale sécurisée",
+      },
       { name: "author", content: "Trombinoscope Team" },
       { property: "og:title", content: "Trombinoscope — Annuaire Professionnel" },
-      { property: "og:description", content: "Gestionnaire d'annuaire professionnel moderne et intuitif" },
+      {
+        property: "og:description",
+        content: "Gestionnaire d'annuaire professionnel moderne et intuitif",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Trombinoscope" },

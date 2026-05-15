@@ -3,23 +3,23 @@
  * Intègre le service CRUD avec TanStack Query pour la gestion de l'état
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { crudService } from './crud';
-import type { Person } from './trombiDB';
-import type { PersonFormValues } from '@/components/PersonForm';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { crudService } from "./crud";
+import type { Person } from "./trombiDB";
+import type { PersonFormValues } from "@/components/PersonForm";
 
 // ============================================================================
 // CLÉS DE REQUÊTE
 // ============================================================================
 
 export const queryKeys = {
-  all: ['people'] as const,
-  list: () => [...queryKeys.all, 'list'] as const,
-  paginated: (page: number, limit: number) => [...queryKeys.all, 'paginated', page, limit] as const,
-  search: (search: string) => [...queryKeys.all, 'search', search] as const,
-  filter: (role: string) => [...queryKeys.all, 'filter', role] as const,
-  stats: () => [...queryKeys.all, 'stats'] as const,
-  detail: (id: string) => [...queryKeys.all, 'detail', id] as const,
+  all: ["people"] as const,
+  list: () => [...queryKeys.all, "list"] as const,
+  paginated: (page: number, limit: number) => [...queryKeys.all, "paginated", page, limit] as const,
+  search: (search: string) => [...queryKeys.all, "search", search] as const,
+  filter: (role: string) => [...queryKeys.all, "filter", role] as const,
+  stats: () => [...queryKeys.all, "stats"] as const,
+  detail: (id: string) => [...queryKeys.all, "detail", id] as const,
 };
 
 // ============================================================================
@@ -42,7 +42,7 @@ export function usePeople() {
  */
 export function usePerson(id: string | undefined) {
   return useQuery({
-    queryKey: queryKeys.detail(id || ''),
+    queryKey: queryKeys.detail(id || ""),
     queryFn: () => (id ? crudService.getById(id) : Promise.resolve(undefined)),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
@@ -218,9 +218,9 @@ export function useExportPeople() {
     mutationFn: () => crudService.exportJSON(),
     onSuccess: (json) => {
       // Déclencher le téléchargement
-      const blob = new Blob([json], { type: 'application/json' });
+      const blob = new Blob([json], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `people-${new Date().toISOString()}.json`;
       a.click();
@@ -250,40 +250,29 @@ export function useImportPeople() {
 
 /**
  * Exemple de composant utilisant les hooks CRUD avec React Query
+ * Créez un fichier .tsx pour pouvoir utiliser cet exemple
  */
+export const EXAMPLE_COMPOSANT_CODE = `
+import { usePeople, usePeopleStats, useCreatePerson, useUpdatePerson, useDeletePerson } from "@/lib/crud-hooks";
+import type { PersonFormValues } from "@/components/PersonForm";
+
 export function ExempleComposantCRUD() {
-  // Récupérer les données
   const { data: people, isLoading, error } = usePeople();
   const { data: stats } = usePeopleStats();
-
-  // Mutations
   const createMutation = useCreatePerson();
   const updateMutation = useUpdatePerson();
   const deleteMutation = useDeletePerson();
 
   const handleCreate = async (formData: PersonFormValues) => {
-    try {
-      await createMutation.mutateAsync(formData);
-      // Toast de succès
-    } catch (error) {
-      console.error('Erreur de création:', error);
-    }
+    await createMutation.mutateAsync(formData);
   };
 
   const handleUpdate = async (id: string, formData: Partial<PersonFormValues>) => {
-    try {
-      await updateMutation.mutateAsync({ id, data: formData });
-    } catch (error) {
-      console.error('Erreur de mise à jour:', error);
-    }
+    await updateMutation.mutateAsync({ id, data: formData });
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      await deleteMutation.mutateAsync(id);
-    } catch (error) {
-      console.error('Erreur de suppression:', error);
-    }
+    await deleteMutation.mutateAsync(id);
   };
 
   if (isLoading) return <div>Chargement...</div>;
@@ -295,7 +284,7 @@ export function ExempleComposantCRUD() {
       {stats && (
         <div>
           <p>Personnes: {stats.total}</p>
-          <p>Rôles: {Object.keys(stats.byRole).join(', ')}</p>
+          <p>Roles: {Object.keys(stats.byRole).join(', ')}</p>
         </div>
       )}
       <ul>
@@ -312,3 +301,4 @@ export function ExempleComposantCRUD() {
     </div>
   );
 }
+`;

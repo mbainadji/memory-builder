@@ -1,11 +1,10 @@
 /**
- * Barrel export pour le module CRUD
+ * Barrel export pour le module CRUD (ES6 pur)
  * Importe simplement: import { crudService, usePeople, ... } from '@/lib/crud-index'
  */
 
 // Service CRUD principal
-export { crudService, CRUDService } from "./crud";
-export type { PaginationOptions, PaginatedResult, FilterOptions } from "./crud";
+export { crudService, CRUDService } from "./crud.js";
 
 // Hooks React Query
 export {
@@ -24,11 +23,12 @@ export {
   useUpsertPerson,
   useExportPeople,
   useImportPeople,
-} from "./crud-hooks";
+} from "./crud-hooks.js";
 
-// Tests
-export { runCRUDTests, TestRunner, assert, assertEquals, assertExists } from "./crud-tests";
-
-// Types
-export type { Person } from "./trombiDB";
-export type { PersonFormValues } from "@/components/PersonForm";
+// Image utils
+export {
+  compressImage,
+  processImageFile,
+  getImageInfo,
+  isValidImageData,
+} from "./image-utils.js";
